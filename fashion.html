@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería Fotográfica | Estilo Pinterest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        nav {
+
+            width: 100%;
+            z-index: 50;
+            padding: .5rem 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+        }
+
+        .typewriter-text {
+            text-decoration: none;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: 300;
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            color: white;
+            border-right: 2px solid white;
+            white-space: nowrap;
+            overflow: hidden;
+            width: 0;
+            animation: typing 1.5s steps(14) forwards, blink 0.7s infinite;
+        }
+
+        @keyframes typing {
+            from {
+                width: 0;
+            }
+
+            to {
+                width: 14ch;
+            }
+        }
+
+        @keyframes blink {
+            50% {
+                border-color: transparent;
+            }
+        }
+
+        .gallery-item {
+            break-inside: avoid;
+            margin-bottom: 1rem;
+            display: inline-block;
+            position: relative;
+            width: 100%;
+            perspective: 1000px;
+        }
+
+        .gallery-item-inner {
+            position: relative;
+            width: 100%;
+            height: auto;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .gallery-item.flipped .gallery-item-inner {
+            transform: rotateY(180deg);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 0;
+        }
+
+        .info-box {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 0;
+            padding: 1rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transform: rotateY(180deg);
+        }
+
+        .info-box h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-box p {
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .gallery-container {
+            column-count: 2;
+            column-gap: 1rem;
+            width: 100%;
+        }
+
+        @media (min-width: 1024px) {
+            .gallery-container {
+                column-count: 3;
+            }
+        }
+
+        .info-button {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            z-index: 20;
+            transition: background 0.3s;
+        }
+
+        .info-button:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Estilos para el modal */
+        .modal {
+            display: none;
+            /* Oculto por defecto */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            color: white;
+            font-size: 30px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .carousel-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(255, 255, 255, 0.8);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 20px;
+            z-index: 10;
+        }
+
+        .prev {
+            left: 10px;
+        }
+
+        .next {
+            right: 10px;
+        }
+    </style>
+</head>
+
+<body class="bg-white min-h-screen font-sans">
+    <nav>
+        <a href="index.html" class="typewriter-text text-black mb-6" cursor:pointer;">david
+            carvajal</a>
+    </nav>
+
+    <div class="container mx-auto px-4">
+        <div id="gallery" class="gallery-container"></div>
+    </div>
+
+    <footer class="py-6 text-center text-gray-500 text-sm mt-12">
+        © <span id="year"></span> Portafolio Fotográfico. Todos los derechos reservados.
+    </footer>
+
+    <!-- Modal para ver imágenes en grande -->
+    <div id="imageModal" class="modal">
+        <span class="close" id="closeModal">&times;</span>
+        <button class="carousel-button prev" id="prevButton">&#10094;</button>
+        <img id="modalImage" class="modal-content" src="" alt="">
+        <button class="carousel-button next" id="nextButton">&#10095;</button>
+    </div>
+
+    <footer class="bg-black text-white py-12 px-4 sm:px-6">
+        <div class="container mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <h3 class="text-xl font-bold">DAVID CARVAJAL</h3>
+                    <p class="text-gray-400 mt-2">Photography & Creative Direction</p>
+                </div>
+
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                        <i class="fab fa-behance"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="footer-divider my-8"></div>
+
+            <div class="flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
+                <p>© 2023 David Carvajal. All rights reserved.</p>
+                <div class="mt-4 md:mt-0 flex space-x-6">
+                    <a href="#" class="hover:text-white transition duration-300">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition duration-300">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script>
+        const galleryData = {
+            "fotos": [
+                {
+                    "id": 1,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/1-IMG_2826.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 2,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/101-IMG_4519.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 3,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/116-IMG_4664.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 4,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/119-IMG_4675.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 5,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/12-IMG_3244.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 6,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/123-IMG_4805.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 7,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/128-IMG_4831.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 8,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/140-IMG_5432.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 9,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/15-IMG_3391.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 10,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/22-IMG_3466.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 11,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/33-IMG_4111.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 12,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/36-IMG_4120.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 13,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/44-IMG_4140.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 14,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/47-IMG_4156.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 15,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/59-IMG_4187.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 16,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/63-IMG_4192.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 17,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/71-IMG_4204.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 18,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/76-IMG_4386.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 19,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/77-IMG_4389.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 20,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/87-IMG_4481.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 21,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/93-IMG_4489.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                },
+                {
+                    "id": 22,
+                    "titulo": "",
+                    "categoria": "fash",
+                    "url": "imgs/FASH/96-IMG_4495.jpg",
+                    "ancho": 600,
+                    "alto": 400
+                }
+            ]
+        };
+
+
+        let currentImageIndex = 0;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadGallery();
+            document.getElementById('year').textContent = new Date().getFullYear();
+        });
+
+        function loadGallery(filter = 'all') {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+
+            galleryData.fotos.forEach((foto, index) => {
+                if (filter === 'all' || foto.categoria === filter) {
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+
+                    const inner = document.createElement('div');
+                    inner.className = 'gallery-item-inner';
+
+                    const img = document.createElement('img');
+                    img.src = foto.url;
+                    img.alt = foto.titulo;
+                    img.loading = 'lazy';
+
+                    img.addEventListener('click', function () {
+                        openModal(index);
+                    });
+
+                    const infoBox = document.createElement('div');
+                    infoBox.className = 'info-box';
+                    infoBox.innerHTML = `
+                        <h3>${foto.titulo}</h3>
+                        <p>ID: ${foto.id}</p>
+                        <p>Categoría: ${foto.categoria}</p>
+                    `;
+
+                    const infoButton = document.createElement('button');
+                    infoButton.className = 'info-button';
+                    infoButton.innerHTML = '+';
+
+                    infoButton.addEventListener('click', function (event) {
+                        event.stopPropagation();
+                        item.classList.toggle('flipped');
+                    });
+
+                    inner.appendChild(img);
+                    inner.appendChild(infoBox);
+                    item.appendChild(inner);
+                    item.appendChild(infoButton);
+
+                    gallery.appendChild(item);
+                }
+            });
+        }
+
+        function openModal(index) {
+            currentImageIndex = index;
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = galleryData.fotos[currentImageIndex].url;
+            modal.style.display = 'flex';
+        }
+
+        document.getElementById('closeModal').onclick = function () {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        document.getElementById('prevButton').onclick = function () {
+            currentImageIndex = (currentImageIndex > 0) ? currentImageIndex - 1 : galleryData.fotos.length - 1;
+            document.getElementById('modalImage').src = galleryData.fotos[currentImageIndex].url;
+        }
+
+        document.getElementById('nextButton').onclick = function () {
+            currentImageIndex = (currentImageIndex < galleryData.fotos.length - 1) ? currentImageIndex + 1 : 0;
+            document.getElementById('modalImage').src = galleryData.fotos[currentImageIndex].url;
+        }
+    </script>
+</body>
+
+</html>
